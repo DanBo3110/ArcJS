@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css"/>
+	<script src="https://js.arcgis.com/3.28/"></script>
+	<script type="text/javascript">
+		require(["esri/map",
+			"esri/layers/ArcGISDynamicMapServiceLayer",
+			"dojo/domReady!"],
+			function (Map, ArcGISDynamicMapServiceLayer) {
+				var map = new Map("mapDiv",{
+					logo:false
+				});
+				var layer1 = new ArcGISDynamicMapServiceLayer("http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer");
+				map.addLayer(layer1);
+			});
+	</script>
+</head>
+
+<body>
+	<div id="mapDiv" style="height:800px;"></div>
+</body>
+</html>
+<!--  -->
+
+

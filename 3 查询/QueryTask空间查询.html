@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>QueryTask</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css"/>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/tundra/tundra.css"/>
+    <script  type="text/Javascript" src="https://js.arcgis.com/3.28/"></script>
+    <style type="text/css">
+        .MapClass{
+            width:100%;
+            height:800px;
+            border:1px solid #000;
+        }
+    </style>
+    <script type="text/javascript">
+
+        require(["esri/map",
+            "esri/layers/ArcGISDynamicMapServiceLayer",
+			"dojo/dom",
+			"dojo/on",
+            "esri/tasks/QueryTask",
+            "esri/toolbars/draw",
+            "esri/tasks/query",
+			"esri/symbols/SimpleLineSymbol",
+			"esri/symbols/SimpleFillSymbol", 
+			"esri/graphic",
+            "dojo/domReady!"],
+            function (Map, ArcGISDynamicMapServiceLayer,dom, on,
+			QueryTask, Draw, Query,
+			SimpleLineSymbol,SimpleFillSymbol,Graphic) {
+            var map = new Map("mapdiv");
+            var layer = new ArcGISDynamicMapServiceLayer
+            ("http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer");
+            map.addLayer(layer)
+
+
+            
+			//定义一个绘图工具
+            var toolBar = new Draw(map);
+			//给button绑定事件
+			on(dom.byId("Btn"),"click",function(){	
+				//激活绘图工具，我要绘制一个面图形
+                toolBar.activate(Draw.POLYGON);
+			})
+            on(toolBar, "draw-complete", function (result) {
+				//获得绘图得到的面
+				var geometry=result.geometry;
+				//关闭绘图工具
+                toolBar.deactivate();
+                queryGraphic(geometry);
+            });
+            
+            function queryGraphic(geometry) {
+				//创建查询对象
+				var queryTask = new QueryTask( "http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer/0");
+				//创建查询参数对象
+                var query = new Query();
+				//是否返回几何形状
+                query.returnGeometry = true;
+				//空间查询的几何对象
+                query.geometry = geometry;
+				//服务器给我们返回的字段信息，*代表返回所有字段
+                query.outFields = ["*"];
+				//空间参考信息
+                query.outSpatialReference = map.spatialReference;
+				//查询的标准，此处代表和geometry相交的图形都要返回
+                query.spatialRelationship = Query.SPATIAL_REL_INTERSECTS;
+
+				//执行空间查询
+                queryTask.execute(query, showQueryResult);
+            }
+
+
+
+
+            function showQueryResult(queryResult) {
+				//创建线符号
+				var lineSymbol=new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASH, new dojo.Color([255, 0, 0]), 3);
+			    //创建面符号
+				var fill=new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, lineSymbol);
+                if (queryResult.features.length == 0) {
+                    dom.byId("divShowResult").innerHTML = "";
+                    return;
+                }
+                var htmls = "";
+                if (queryResult.features.length >= 1) {
+                    htmls = htmls + "<table style=\"width: 100%\">";
+                    htmls = htmls + "<tr><td>名称</td></tr>";
+                    for (var i = 0; i < queryResult.features.length; i++) {
+						//得到graphic
+                        var graphic = queryResult.features[i];
+						//给图形赋予符号
+                        graphic.setSymbol(fill);
+						//添加到地图从而实现高亮效果
+                        map.graphics.add(graphic);
+						////获得内容，对应属性表
+                        var ptName = graphic.attributes["NL_NAME_3"];
+                        if (i % 2 == 0)
+                            htmls = htmls + "<tr>";
+                        else
+                            htmls = htmls + "<tr bgcolor=\"#F0F0F0\">";
+                        htmls = htmls + "<td><a href=\"#\"\">" + ptName + "</a></td>";
+                        htmls = htmls + "</tr>";
+                    }
+                    htmls = htmls + "</table>";
+					//将教学楼的名称信息和divShowResult绑定
+                    dom.byId("divShowResult").innerHTML = htmls;
+                }
+            }
+        });
+
+
+    </script>
+</head>
+<body>
+    <div id="mapdiv" class="MapClass"></div>
+    <input type="button" value="空间查询" id="Btn"/>
+    <div id="divShowResult"></div>
+</body>
+</html>
+

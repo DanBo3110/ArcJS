@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+    <title>Layer Swipe</title>
+    <link rel="stylesheet" type="text/css" href="esri.css" />
+    <link rel="stylesheet" type="text/css" href="tundra.css" />
+    <style>
+        html,
+        body,
+        #map {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            position: relative;
+        }
+    </style>
+     <script src="https://js.arcgis.com/3.29/"></script>
+</head>
+
+<body class="calcite">
+<div id="map" class="map">
+    <div id="swipeDiv"></div>
+</div>
+</body>
+
+<script>
+    require([
+        "esri/map",
+        "esri/layers/FeatureLayer",
+        "esri/dijit/LayerSwipe",
+        "dojo/domReady!"
+    ], function (
+        Map, FeatureLayer, LayerSwipe
+    ) {
+        var map = new Map("map");
+        thingslayer0 = new FeatureLayer("http://localhost:6080/arcgis/rest/services/gaofen/bazhou/MapServer" + "/0", {
+            mode: FeatureLayer.MODE_ONDEMAND,
+            outFields: ["*"]
+        });
+        thingslayer1 = new FeatureLayer("http://localhost:6080/arcgis/rest/services/gaofen/bazhou/MapServer" + "/1", {
+            mode: FeatureLayer.MODE_ONDEMAND,
+            outFields: ["*"]
+        });
+        //Ê¸Á¿
+        map.addLayer(thingslayer0);
+        map.addLayer(thingslayer1);
+        var swipeWidget = new LayerSwipe({
+            type: "vertical",
+            map: map,
+            // Òª¾íÁ±ÄÄÐ©Í¼²ã
+            layers: [thingslayer0, thingslayer1],
+        }, "swipeDiv");
+        swipeWidget.startup();
+    });
+</script>
+
+</html>
+

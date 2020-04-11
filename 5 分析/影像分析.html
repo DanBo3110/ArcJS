@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>影像分析</title>
+	
+    <meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+    <meta http-equiv="description" content="this is my page">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css" />
+    <script src="https://js.arcgis.com/3.28/"></script>
+    <script  src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<style>
+        .MapClass{
+            width:100%;
+            height:700px;
+            border:1px solid #000;
+        }
+    </style>
+	<script>
+		require(["esri/map","esri/layers/ArcGISImageServiceLayer","dojo/on",
+		"dojo/dom","esri/toolbars/draw",
+		"esri/tasks/ImageServiceIdentifyTask","esri/tasks/ImageServiceIdentifyParameters",
+		"esri/symbols/SimpleLineSymbol","esri/graphic","esri/symbols/SimpleMarkerSymbol", "esri/symbols/SimpleFillSymbol",
+		"esri/layers/MosaicRule",
+		"dojo/domReady!"],function(Map,ArcGISImageServiceLayer,on,dom,Draw,ImageServiceIdentifyTask,
+		ImageServiceIdentifyParameters,SimpleLineSymbol,
+		Graphic,SimpleMarkerSymbol,SimpleFillSymbol,MosaicRule){
+			var map=new Map("mapDiv")
+
+			//注意这里是影像服务
+			var layer=new ArcGISImageServiceLayer("http://localhost:6080/arcgis/rest/services/demo/ImageService_qingdao/ImageServer")
+			map.addLayer(layer);
+			//用于绘制点
+			var toolbar =new Draw(map);
+			
+			//创建影像分析对象
+			var task=new ImageServiceIdentifyTask("http://localhost:6080/arcgis/rest/services/demo/ImageService_qingdao/ImageServer");
+			//创建影像分析参数对象
+			var params=new ImageServiceIdentifyParameters();
+			var lineSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASH, new dojo.Color([255, 0, 0]), 3);
+            var marker= new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE,10, lineSymbol, new dojo.Color([255, 0, 0]));
+            var fill= new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, lineSymbol,  new dojo.Color([255, 0, 0]));
+			//给绘制折线按钮绑定事件
+			on(dom.byId("drawp"),"click",function(){
+				toolbar.activate(Draw.POINT, {
+                        showTooltips:true
+                })
+			})
+			//给draw工具的绘制完成事件绑定函数
+			on(toolbar,"draw-complete", function (result) {
+				map.graphics.clear();
+                var geometry=result.geometry;
+				//给参数对象的几何属性赋值
+				params.geometry =geometry;
+				graphic= new Graphic(geometry, marker);
+				map.graphics.add(graphic);
+				toolbar.deactivate();
+			
+			})
+			
+			on(dom.byId("btn"),"click",function(){
+				//设置掩膜规则
+				var mosaicRule=new MosaicRule();
+				mosaicRule.ascending=false;
+				mosaicRule.method=MosaicRule.METHOD_CENTER
+				params.mosaicRule=mosaicRule
+				params.pixelSizeX=layer.pixelSizeX;
+				params.pixelSizeY=layer.pixelSizeY;
+				task.execute(params,function(result){
+					//弹出改点的高程值
+					alert(result.value)
+				})
+			})
+			
+		});
+	</script>
+  </head>
+  
+  <body>
+    <div id="mapDiv" class="MapClass"></div>
+	<button id="drawp">绘制点</button>
+	<button id="btn">查询</button>
+  </body>
+</html>
+

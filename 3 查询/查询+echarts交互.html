@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>QueryTask</title>
+
+	<script src="../echarts.min.js"></script>
+	<link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css" />
+	<script type="text/Javascript" src="https://js.arcgis.com/3.28/"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+	<style type="text/css">
+		.MapClass {
+			width: 100%;
+			height: 520px;
+			/* border:1px solid #000; */
+		}
+	</style>
+	<script>
+		var beijing0 = "http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer/0";
+
+		var GL_pt_NL_NAME_3;
+		var GL_pt_area_td;
+
+		require(["esri/map", "esri/layers/ArcGISDynamicMapServiceLayer", "dojo/dom", "dojo/on", "dojo/query", "esri/tasks/QueryTask", "esri/tasks/query", "esri/symbols/SimpleLineSymbol", "esri/Color",
+			"dojo/domReady!"],
+			function (Map, ArcGISDynamicMapServiceLayer, dom, on, query, QueryTask, Query, SimpleLineSymbol, Color) {
+				var map = new Map("mapDiv");
+				var layer = new ArcGISDynamicMapServiceLayer("http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer");
+				map.addLayer(layer)
+
+				//给属性查询按钮添加click事件
+				on(dom.byId("Btn_sx"), "click", function (e) {
+					// var text = document.getElementById("te").value;
+
+					var text = $("#te").val();
+
+					//定义查询对象
+					var queryTask = new QueryTask(beijing0);
+					//定义查询参数对象
+					var query = new Query();
+					//查询条件，类似于sql语句的where子句
+					query.where = "FID = " + text;
+					//返回的字段信息：*代表返回全部字段
+					query.outFields = ["*"];
+
+					//是否返回几何形状
+					query.returnGeometry = true;
+					//执行属性查询
+					var a = queryTask.execute(query, showQueryResult);
+					// alert(re());
+
+				})
+
+
+
+				//属性查询完成之后，用showQueryResult来处理返回的结果
+				function showQueryResult(queryResult) {
+					if (queryResult.features.length >= 1) {
+						for (var i = 0; i < queryResult.features.length; i++) {
+							var graphic = queryResult.features[i];
+
+							var pt_NL_NAME_3 = graphic.attributes["NL_NAME_3"];
+							var pt_area_td = graphic.attributes["土地面积"];
+
+
+							GL_pt_NL_NAME_3 = pt_NL_NAME_3;
+							GL_pt_area_td = pt_area_td;
+						}
+					}
+
+					var x = document.getElementById("main");
+					var myChart = echarts.init(x);
+					var option = {
+						tooltip: { show: true },
+						legend: { data: ['123'] },
+						xAxis: [{ type: 'category', data: [GL_pt_NL_NAME_3, "朝阳区", "大厂区"] }],
+						yAxis: [{ type: 'value' }],
+						series: [{ "name": "销量", "type": "bar", "data": [pt_area_td, 1500, 1000] }]
+					};
+					myChart.setOption(option);
+
+
+				}
+
+			});
+
+	</script>
+</head>
+
+<body>
+	<input type="text" value="在此处输入需要查询的XX" id="te">
+	<input type="button" value="属性查询" id="Btn_sx" />
+
+	<div id="mapDiv" class="MapClass"></div>
+
+	<div id="main" style="height:400px;"></div>
+
+</body>
+
+</html>

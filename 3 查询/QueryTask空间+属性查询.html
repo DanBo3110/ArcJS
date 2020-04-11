@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>QueryTask</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css"/>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.28/dijit/themes/tundra/tundra.css"/>
+    <script  type="text/Javascript" src="https://js.arcgis.com/3.28/"></script>
+    <style type="text/css">
+        .MapClass{
+            width:100%;
+            height:800px;
+            border:1px solid #000;
+        }
+    </style>
+    <script type="text/javascript">
+
+        require(["esri/map",
+            "esri/layers/ArcGISDynamicMapServiceLayer",
+			"dojo/dom",
+			"dojo/on",
+            "esri/tasks/QueryTask",
+            "esri/toolbars/draw",
+            "esri/tasks/query",
+			"esri/symbols/SimpleLineSymbol",
+			"esri/symbols/SimpleFillSymbol", 
+			"esri/graphic",
+            "dojo/domReady!"],
+            function (Map, ArcGISDynamicMapServiceLayer,dom, on,
+			QueryTask, Draw, Query,
+			SimpleLineSymbol,SimpleFillSymbol,Graphic) {
+                var map = new Map("mapDiv");
+                var layer = new ArcGISDynamicMapServiceLayer
+                ("http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer");
+				//将图层添加到地图
+                map.addLayer(layer)
+
+
+				//给属性查询按钮添加click事件
+				on(dom.byId("Btn_sx"),"click",function(e){
+					var queryTask = new QueryTask
+					("http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer/0");
+					var query = new Query();
+                    query.where = "FID = 2";
+                    query.outFields = ["*"];
+                    query.returnGeometry = true;
+                    queryTask.execute(query, showQueryResult);
+                })
+                
+            var toolBar = new Draw(map);
+			on(dom.byId("Btn_kj"),"click",function(){
+                toolBar.activate(Draw.POLYGON);
+			})
+            on(toolBar, "draw-complete", function (result) {
+				var geometry=result.geometry;
+                toolBar.deactivate();
+                queryGraphic(geometry);
+            });
+            
+            function queryGraphic(geometry) {
+				var queryTask = new QueryTask( "http://localhost:6080/arcgis/rest/services/ecology/beijing_2012_3/MapServer/0");
+				var query = new Query();
+                query.geometry = geometry;
+                query.outFields = ["*"];
+                query.returnGeometry = true;
+                queryTask.execute(query, showQueryResult);
+            }
+            
+                function showQueryResult(queryResult)
+                {
+					var lineSymbol=new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASH, new dojo.Color([255, 0, 0]), 3);
+					var fill=new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, lineSymbol);
+                    if (queryResult.features.length == 0) {
+                        dom.byId("divShowResult").innerHTML = "";
+                        return;
+                    }
+                    var htmls = "";
+                    if (queryResult.features.length >= 1) {
+                        htmls = htmls + "<table style=\"width: 100%\">";
+                        htmls = htmls + "<tr><td>名称</td></tr>";
+                        for (var i = 0; i < queryResult.features.length; i++) {
+                            var graphic = queryResult.features[i];
+							graphic.setSymbol(fill);
+                            map.graphics.add(graphic);
+							var ptName = graphic.attributes["NL_NAME_3"];
+                            if (i % 2 == 0)
+                                htmls = htmls + "<tr>";
+                            else
+                                htmls = htmls + "<tr bgcolor=\"#F0F0F0\">";
+                            htmls = htmls + "<td><a href=\"#\" \">" + ptName + "</a></td>";
+                            htmls = htmls + "</tr>";
+                        }
+                        htmls = htmls + "</table>";
+                        dom.byId("divShowResult").innerHTML = htmls;
+					}
+				}
+            });
+
+
+    </script>
+</head>
+<body>
+    <div id="mapDiv" class="MapClass"></div>
+    <input type="button" value="属性查询" id="Btn_sx"/>
+    
+    <input type="button" value="空间查询" id="Btn_kj"/>
+    <div id="divShowResult"></div>
+</body>
+</html>
+

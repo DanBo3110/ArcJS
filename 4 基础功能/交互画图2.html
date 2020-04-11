@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.31/dijit/themes/claro/claro.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/3.31/esri/css/esri.css" />
+    <script src="https://js.arcgis.com/3.31/"></script>
+    <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
+    <style>
+        /* 指定样式 */
+        html,
+        body,
+        #map {
+            height: 100%;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body class="claro">
+    <div id="map"></div>
+    <div style="position: absolute; top: 60px; left: 100px; width: 800px;">
+        <button type="button" class="btn btn-default">简单点</button>
+        <button type="button" class="btn btn-default">图片点</button>
+        <button type="button" class="btn btn-default">基本线</button>
+        <button type="button" class="btn btn-default">箭头线</button>
+        <button type="button" class="btn btn-default">面样式1</button>
+        <button type="button" class="btn btn-default">面样式2</button>
+
+        <button type="button" class="btn btn-default">绘制多点</button>
+        <button type="button" class="btn btn-default">自由线</button>
+        <button type="button" class="btn btn-default">自由面</button>
+        <button type="button" class="btn btn-default">圆</button>
+        <button type="button" class="btn btn-default">矩形</button>
+
+    </div>
+
+    <script>
+        require([
+            "esri/map",
+            "dojo/dom", "dojo/on",
+            "esri/layers/ArcGISDynamicMapServiceLayer",
+            "esri/geometry/Point",
+            "esri/geometry/Polyline",
+            "esri/graphic",
+            "esri/Color",
+            "esri/symbols/SimpleMarkerSymbol",
+            "esri/symbols/SimpleLineSymbol",
+            "esri/symbols/SimpleFillSymbol",
+            "esri/symbols/PictureMarkerSymbol",
+            "esri/renderers/SimpleRenderer",
+            "dojo/query",
+            "esri/toolbars/draw",
+            "esri/SpatialReference",
+            "dojo/domReady!"
+        ], function (
+            Map, dom, on, ArcGISDynamicMapServiceLayer, Point, Polyline, Graphic,
+            Color, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, PictureMarkerSymbol, SimpleRenderer, query, Draw, SpatialReference
+        ) {
+            const map = new Map("map", {
+                center: [108.934518, 34.35333],
+                zoom: 7,
+                logo: false,
+                basemap: "oceans"
+            });
+            var markerSym = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_SQUARE, 12,
+                new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID,
+                    new Color([87, 181, 74]), 1),
+                new Color([255, 0, 0, 0.5]));;
+            map.on("load", () => {
+                var toolbar = new Draw(map, { showTooltips: true });
+                // 标记 基本和自定义样式
+                var smpPoint = true;
+                var smpLine = true;
+                var smpPloy = true;
+                
+                query("button").on("click", function (event) {
+                    var value = this.innerHTML;
+                    switch (value) {
+                        case "简单点": {
+                            toolbar.activate(Draw.POINT, {
+                                showTooltips: true
+                            })
+                            smpPoint = true;
+                            break;
+                        }
+                        case "图片点": {
+                            toolbar.activate(Draw.POINT, {
+                                showTooltips: true
+                            })
+                            smpPoint = false;
+                            break;
+                        }
+                        case "基本线": {
+                            toolbar.activate(Draw.POLYLINE, {
+                                showTooltips: true
+                            })
+                            smpLine = true;
+                            break;
+                        }
+                        case "箭头线": {
+                            toolbar.activate(Draw.POLYLINE, {
+                                showTooltips: true
+                            })
+                            smpLine = false;
+                            break;
+                        }
+                        case "面样式1": {
+                            toolbar.activate(Draw.POLYGON, {
+                                showTooltips: true
+                            })
+                            smpPloy = true
+                            break;
+                        }
+                        case "面样式2": {
+                            toolbar.activate(Draw.POLYGON, {
+                                showTooltips: true
+                            })
+                            smpPloy = false
+                            break;
+                        }
+                        case "绘制多点": {
+                            toolbar.activate(Draw.MULTI_POINT, {
+                                showTooltips: true
+                            })
+                            break;
+                        }
+                        case "自由线": {
+                            toolbar.activate(Draw.FREEHAND_POLYLINE, {
+                                showTooltips: true
+                            })
+                            break;
+                        }
+                        case "自由面": {
+                            toolbar.activate(Draw.FREEHAND_POLYGON, {
+                                showTooltips: true
+                            })
+                            break;
+                        }
+                        case "圆": {
+                            toolbar.activate(Draw.CIRCLE, {
+                                showTooltips: true
+                            })
+                            break;
+                        }
+                        case "矩形": {
+                            toolbar.activate(Draw.RECTANGLE, {
+                                showTooltips: true
+                            })
+                            break;
+                        }
+
+                    }
+
+                    var lineSymbol1 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASH, new Color([0, 25, 0]), 1);
+                    var lineSymbol2 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_LONGDASHDOT, new Color([225, 0, 0]), 1);
+
+                    var outLineSymbol = new SimpleLineSymbol(SimpleLineSymbol.STYLE_DASHDOTDOT, new Color([235, 235, 5]), 3);
+                    var outLineSymbol2 = new SimpleLineSymbol(SimpleLineSymbol.STYLE_LONGDASH, new Color([235, 235, 5]), 3);
+
+                    var marker = new SimpleMarkerSymbol(SimpleMarkerSymbol.STYLE_CIRCLE, 10, lineSymbol1, new Color([215, 224, 203]));
+                    // var fill = new SimpleFillSymbol(SimpleFillSymbol.STYLE_VERTICAL, lineSymbol1, new Color([235, 235, 5]));
+                    var fill1 = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, outLineSymbol, new Color([48, 190, 144, 0.5]));
+                    var fill2 = new SimpleFillSymbol(SimpleFillSymbol.STYLE_DIAGONAL_CROSS, lineSymbol1, new Color([48, 190, 144]));
+
+                    var pictureMarkerSymbol = new PictureMarkerSymbol('https://gtms04.alicdn.com/tps/i4/TB1_oz6GVXXXXaFXpXXJDFnIXXX-64-64.ico', 20, 20);
+
+                    lineSymbol2.setMarker({
+                        style: "arrow",
+                        placement: "end",
+                    });
+
+                    on(toolbar, "draw-complete", function (result) {
+                        var geometry = result.geometry;
+                        var type = geometry.type;
+                        var graphic;
+                        switch (type) {
+                            case "point":
+                                if (smpPoint)
+                                    graphic = new Graphic(geometry, marker);
+
+                                else
+                                    graphic = new Graphic(geometry, pictureMarkerSymbol);
+                                break;
+                            case "polyline":
+                                if (smpLine)
+                                    graphic = new Graphic(geometry, lineSymbol1);
+
+                                else
+                                    graphic = new Graphic(geometry, lineSymbol2);
+                                break;
+                            case "polygon":
+                                if (smpPloy)
+                                    graphic = new Graphic(geometry, fill1);
+                                else
+                                    graphic = new Graphic(geometry, fill2);
+                                // graphic = new Graphic(geometry, fill);
+                                break;
+                            case "multipoint":
+                                graphic = new Graphic(geometry, marker);
+                                break;
+                        }
+                        console.log(map.graphics.renderer)
+                        map.graphics.add(graphic);
+                        toolbar.deactivate();
+                    });
+
+                })
+            })
+        })
+
+
+    </script>
+
+</body>
+
+</html>
